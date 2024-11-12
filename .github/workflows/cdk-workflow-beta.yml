@@ -36,8 +36,7 @@ jobs:
           ENVIRONMENT="${{ steps.env.outputs.environment }}"
 
           # Set secrets using gh cli
-          echo ${GH_TOKEN} 
-          gh secret set ACCESS_KEY --env $ENVIRONMENT --body "$(jq -r .accessKey credentials.json)"
-          gh secret set SECRET_KEY --env $ENVIRONMENT --body "$(jq -r .secretKey credentials.json)"
-
+          gh status
           echo "Successfully set secrets for $ENVIRONMENT environment"
+        #   gh secret set ACCESS_KEY --env $ENVIRONMENT --body "$(jq -r .accessKey credentials.json)"
+        #   gh secret set SECRET_KEY --env $ENVIRONMENT --body "$(jq -r .secretKey credentials.json)"
