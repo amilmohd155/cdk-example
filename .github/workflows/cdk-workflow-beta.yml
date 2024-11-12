@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch: # Keep manual trigger for testing
 
 jobs:
   set-secrets:
@@ -19,9 +19,13 @@ jobs:
             echo "environment=preview" >> $GITHUB_OUTPUT
           fi
 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Generate credentials
         id: generate-creds
         run: |
+          # Generate credentials with environment prefix for easier tracking
           ENV_PREFIX="${{ steps.env.outputs.environment }}"
 
           echo '{
@@ -29,23 +33,43 @@ jobs:
             "secretKey": "'${ENV_PREFIX}_$(openssl rand -hex 32)'"
           }' > credentials.json
 
-      #   - name: Install GitHub CLI
-      #     run: |
-      #       type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
-      #       curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-      #       && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-      #       && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-      #       && sudo apt update \
-      #       && sudo apt install gh -y
+          # Set outputs for next step
+          echo "access_key=$(jq -r .accessKey credentials.json)" >> $GITHUB_OUTPUT
+          echo "secret_key=$(jq -r .secretKey credentials.json)" >> $GITHUB_OUTPUT
 
-      - name: Set environment secrets
+      - name: Set repository secrets
+        uses: actions/github-script@v7
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ENVIRONMENT="${{ steps.env.outputs.environment }}"
+          ACCESS_KEY: ${{ steps.generate-creds.outputs.access_key }}
+          SECRET_KEY: ${{ steps.generate-creds.outputs.secret_key }}
+        with:
+          script: |
+            const environment = '${{ steps.env.outputs.environment }}';
 
-          # Set secrets using gh cli
-          gh secret set ACCESS_KEY --env $ENVIRONMENT --body "$(jq -r .accessKey credentials.json)"
-          gh secret set SECRET_KEY --env $ENVIRONMENT --body "$(jq -r .secretKey credentials.json)"
+            // Get the environment ID
+            const { data: envs } = await github.rest.repos.getAllEnvironments({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
 
-          echo "Successfully set secrets for $ENVIRONMENT environment"
+            const env = envs.environments.find(e => e.name === environment);
+            if (!env) {
+              throw new Error(`Environment ${environment} not found`);
+            }
+
+            // Create/update secrets for the environment
+            await github.rest.actions.createOrUpdateEnvironmentSecret({
+              repository_id: context.repo.id,
+              environment_name: environment,
+              secret_name: 'ACCESS_KEY',
+              encrypted_value: process.env.ACCESS_KEY
+            });
+
+            await github.rest.actions.createOrUpdateEnvironmentSecret({
+              repository_id: context.repo.id,
+              environment_name: environment,
+              secret_name: 'SECRET_KEY',
+              encrypted_value: process.env.SECRET_KEY
+            });
+
+            console.log(`Successfully set secrets for ${environment} environment`);
