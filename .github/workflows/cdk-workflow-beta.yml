@@ -42,12 +42,12 @@ jobs:
       - name: CDK synth
         run: npx --yes cdk synth
 
-      # - name: CDK deploy
-      #   run: |
-      #     export CDK_DEFAULT_ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
-      #     npx --yes cdk deploy \
-      #         --require-approval never \
-      #         --outputs-file outputs.json
+      - name: CDK deploy
+        run: |
+          export CDK_DEFAULT_ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
+          npx --yes cdk deploy \
+              --require-approval never \
+              --outputs-file outputs.json
 
       # - name: Get secrets from AWS Secrets Manager
       #   id: secrets
