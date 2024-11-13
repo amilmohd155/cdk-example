@@ -16,6 +16,7 @@ jobs:
     env:
       TABLE_NAME: ${{ secrets.TABLE_NAME }}
       EXTERNAL_ID: ${{ secrets.EXTERNAL_ID }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -38,27 +39,30 @@ jobs:
       - name: AWS account - Debug
         run: aws sts get-caller-identity
 
-      - name: CDK deploy
-        run: |
-          export CDK_DEFAULT_ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
-          npx --yes cdk deploy \
-              --require-approval never \
-              --outputs-file outputs.json
+      - name: CDK synth
+        run: npx --yes cdk synth
 
-      - name: Get secrets from AWS Secrets Manager
-        id: secrets
-        uses: aws-actions/aws-secretsmanager-get-secrets@v2
-        with:
-          secret-ids: |
-            ,znap-url-secret
-          parse-json-secrets: true
+      # - name: CDK deploy
+      #   run: |
+      #     export CDK_DEFAULT_ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
+      #     npx --yes cdk deploy \
+      #         --require-approval never \
+      #         --outputs-file outputs.json
 
-      - name: Print secrets
-        run: |
-          ACCESS_KEY_ID=$(echo "${{ steps.get_secrets.outputs.secrets }}" | jq -r '.AWS_ACCESS_KEY_ID')
-          SECRET_ACCESS_KEY=$(echo "${{ steps.get_secrets.outputs.secrets }}" | jq -r '.AWS_SECRET_ACCESS_KEY')
-          echo "AWS_ACCESS_KEY_ID: $ACCESS_KEY_ID"
-          echo "AWS_SECRET_ACCESS_KEY: $SECRET_ACCESS_KEY"
+      # - name: Get secrets from AWS Secrets Manager
+      #   id: secrets
+      #   uses: aws-actions/aws-secretsmanager-get-secrets@v2
+      #   with:
+      #     secret-ids: |
+      #       ,znap-url-secret
+      #     parse-json-secrets: true
+
+      # - name: Print secrets
+      #   run: |
+      #     ACCESS_KEY_ID=$(echo "${{ steps.get_secrets.outputs.secrets }}" | jq -r '.AWS_ACCESS_KEY_ID')
+      #     SECRET_ACCESS_KEY=$(echo "${{ steps.get_secrets.outputs.secrets }}" | jq -r '.AWS_SECRET_ACCESS_KEY')
+      #     echo "AWS_ACCESS_KEY_ID: $ACCESS_KEY_ID"
+      #     echo "AWS_SECRET_ACCESS_KEY: $SECRET_ACCESS_KEY"
 
   # job1:
   #   runs-on: ubuntu-latest
