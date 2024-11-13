@@ -38,9 +38,6 @@ jobs:
       - name: AWS account - Debug
         run: aws sts get-caller-identity
 
-      - name: CDK synth
-        run: npx cdk synth
-
       - name: CDK deploy
         run: |
           export CDK_DEFAULT_ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
