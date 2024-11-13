@@ -120,7 +120,7 @@ export class CdkExampleStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY, // NOT recommended for production code
     });
 
-    templatedSecret.grantRead(dynamodbAccessRole);
+    // templatedSecret.grantRead(dynamodbAccessRole);
 
     new cdk.CfnOutput(this, "secretsManagerArn", {
       value: templatedSecret.secretArn,
