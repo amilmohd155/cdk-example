@@ -1,42 +1,29 @@
-name: Generate and Set Environment Secrets
+name: Use JSON Output as Separate Environment Variables
+
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
-  set-secrets:
+  job1:
     runs-on: ubuntu-latest
-
+    outputs:
+      jsonOutput: ${{ steps.generate_json.outputs.jsonData }}
     steps:
-      - name: Determine environment
-        id: env
+      - name: Generate JSON output
+        id: generate_json
         run: |
-          if [[ ${{ github.ref }} == "refs/heads/main" ]]; then
-            echo "environment=production" >> $GITHUB_OUTPUT
-          else
-            echo "environment=preview" >> $GITHUB_OUTPUT
-          fi
+          echo "::set-output name=jsonData::{\"key1\":\"value1\",\"key2\":\"value2\"}"
 
-      - name: Generate credentials
-        id: generate-creds
+  job2:
+    needs: job1
+    runs-on: ubuntu-latest
+    env:
+      KEY1: ${{ fromJson(needs.job1.outputs.jsonOutput).key1 }}
+      KEY2: ${{ fromJson(needs.job1.outputs.jsonOutput).key2 }}
+    steps:
+      - name: Use the JSON keys as separate environment variables
         run: |
-          ENV_PREFIX="${{ steps.env.outputs.environment }}"
-
-          echo '{
-            "accessKey": "'${ENV_PREFIX}_$(openssl rand -hex 20)'",
-            "secretKey": "'${ENV_PREFIX}_$(openssl rand -hex 32)'"
-          }' > credentials.json
-
-      - name: Set environment secrets
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ENVIRONMENT="${{ steps.env.outputs.environment }}"
-
-          # Set secrets using gh cli
-          gh status
-          echo "Successfully set secrets for $ENVIRONMENT environment"
-        #   gh secret set ACCESS_KEY --env $ENVIRONMENT --body "$(jq -r .accessKey credentials.json)"
-        #   gh secret set SECRET_KEY --env $ENVIRONMENT --body "$(jq -r .secretKey credentials.json)"
+          echo "KEY1 is $KEY1"
+          echo "KEY2 is $KEY2"
