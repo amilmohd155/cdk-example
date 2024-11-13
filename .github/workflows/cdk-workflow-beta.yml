@@ -13,9 +13,9 @@ permissions:
 jobs:
   cdk:
     runs-on: ubuntu-latest
-    # env:
-    #   TABLE_NAME: ${{ secrets.TABLE_NAME }}
-    #   EXTERNAL_ID: ${{ secrets.EXTERNAL_ID }}
+    env:
+      TABLE_NAME: ${{ secrets.TABLE_NAME }}
+      EXTERNAL_ID: ${{ secrets.EXTERNAL_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
