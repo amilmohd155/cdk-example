@@ -49,20 +49,20 @@ jobs:
               --require-approval never \
               --outputs-file outputs.json
 
-      # - name: Get secrets from AWS Secrets Manager
-      #   id: secrets
-      #   uses: aws-actions/aws-secretsmanager-get-secrets@v2
-      #   with:
-      #     secret-ids: |
-      #       ,znap-url-secret
-      #     parse-json-secrets: true
+      - name: Get secrets from AWS Secrets Manager
+        id: secrets
+        uses: aws-actions/aws-secretsmanager-get-secrets@v2
+        with:
+          secret-ids: |
+            ,znap-url-secret
+          parse-json-secrets: true
 
-      # - name: Print secrets
-      #   run: |
-      #     ACCESS_KEY_ID=$(echo "${{ steps.get_secrets.outputs.secrets }}" | jq -r '.AWS_ACCESS_KEY_ID')
-      #     SECRET_ACCESS_KEY=$(echo "${{ steps.get_secrets.outputs.secrets }}" | jq -r '.AWS_SECRET_ACCESS_KEY')
-      #     echo "AWS_ACCESS_KEY_ID: $ACCESS_KEY_ID"
-      #     echo "AWS_SECRET_ACCESS_KEY: $SECRET_ACCESS_KEY"
+      - name: Print secrets
+        run: |
+          ACCESS_KEY_ID=$(echo "${{ steps.get_secrets.outputs.secrets }}" | jq -r '.AWS_ACCESS_KEY_ID')
+          SECRET_ACCESS_KEY=$(echo "${{ steps.get_secrets.outputs.secrets }}" | jq -r '.AWS_SECRET_ACCESS_KEY')
+          echo "AWS_ACCESS_KEY_ID: $ACCESS_KEY_ID"
+          echo "AWS_SECRET_ACCESS_KEY: $SECRET_ACCESS_KEY"
 
   # job1:
   #   runs-on: ubuntu-latest
