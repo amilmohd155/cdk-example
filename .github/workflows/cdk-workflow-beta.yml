@@ -19,7 +19,7 @@ jobs:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -53,16 +53,15 @@ jobs:
         id: secrets
         uses: aws-actions/aws-secretsmanager-get-secrets@v2
         with:
-          secret-ids: |
-            ,znap-url-secret
-          parse-json-secrets: true
+          secret-ids: znap-url-secret
+          # parse-json-secrets: true
 
-      - name: Print secrets
-        run: |
-          ACCESS_KEY_ID=$(echo "${{ steps.get_secrets.outputs.secrets }}" | jq -r '.AWS_ACCESS_KEY_ID')
-          SECRET_ACCESS_KEY=$(echo "${{ steps.get_secrets.outputs.secrets }}" | jq -r '.AWS_SECRET_ACCESS_KEY')
-          echo "AWS_ACCESS_KEY_ID: $ACCESS_KEY_ID"
-          echo "AWS_SECRET_ACCESS_KEY: $SECRET_ACCESS_KEY"
+      # - name: Print secrets
+      #   run: |
+      #     ACCESS_KEY_ID=$(echo "${{ steps.get_secrets.outputs.secrets }}" | jq -r '.AWS_ACCESS_KEY_ID')
+      #     SECRET_ACCESS_KEY=$(echo "${{ steps.get_secrets.outputs.secrets }}" | jq -r '.AWS_SECRET_ACCESS_KEY')
+      #     echo "AWS_ACCESS_KEY_ID: $ACCESS_KEY_ID"
+      #     echo "AWS_SECRET_ACCESS_KEY: $SECRET_ACCESS_KEY"
 
   # job1:
   #   runs-on: ubuntu-latest
