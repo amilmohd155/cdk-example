@@ -1,7 +1,9 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import {
+  AccessKey,
   ArnPrincipal,
   CfnAccessKey,
   Effect,
@@ -99,18 +101,41 @@ export class CdkExampleStack extends cdk.Stack {
     assumeRolePolicy.attachToUser(user);
     // assumeRolePolicy.attachToGroup(group);
 
-    const accessKey = new CfnAccessKey(this, "CfnAccessKey", {
-      userName: user.userName,
-    });
-    new cdk.CfnOutput(this, "accessKeyId", {
-      value: accessKey.ref,
-      exportName: "accessKey",
+    // const accessKey = new CfnAccessKey(this, "CfnAccessKey", {
+    //   userName: user.userName,
+    // });
+
+    const accessKey = new AccessKey(this, "AccessKey", {
+      user,
     });
 
-    new cdk.CfnOutput(this, "secretAccessKey", {
-      value: accessKey.attrSecretAccessKey,
-      exportName: "secretAccessKey",
+    const templatedSecret = new secretsmanager.Secret(this, "TemplatedSecret", {
+      secretName: "znap-url-secret",
+      secretObjectValue: {
+        AWS_ACCESS_KEY_ID: cdk.SecretValue.unsafePlainText(
+          accessKey.accessKeyId
+        ),
+        AWS_SECRET_ACCESS_KEY: accessKey.secretAccessKey,
+      },
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // NOT recommended for production code
     });
+
+    templatedSecret.grantRead(dynamodbAccessRole);
+
+    new cdk.CfnOutput(this, "secretsManagerArn", {
+      value: templatedSecret.secretArn,
+      exportName: "secretsManagerArn",
+    });
+
+    // new cdk.CfnOutput(this, "accessKeyId", {
+    //   value: accessKey.accessKeyId,
+    //   exportName: "accessKey",
+    // });
+
+    // new cdk.CfnOutput(this, "secretAccessKey", {
+    //   value: accessKey.secretAccessKey.toString(),
+    //   exportName: "secretAccessKey",
+    // });
   }
 }
 

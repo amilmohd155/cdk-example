@@ -6,34 +6,73 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
-  job1:
+  cdk:
     runs-on: ubuntu-latest
-    outputs:
-      key1: ${{ steps.generate_json.outputs.key1 }}
-      key2: ${{ steps.generate_json.outputs.key2 }}
+    # env:
+    #   TABLE_NAME: ${{ secrets.TABLE_NAME }}
+    #   EXTERNAL_ID: ${{ secrets.EXTERNAL_ID }}
     steps:
-      - name: Generate JSON output
-        id: generate_json
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{vars.AWS_REGION}}
+          role-to-assume: ${{secrets.AWS_ROLE_ARN}}
+
+      - name: AWS account - Debug
+        run: aws sts get-caller-identity
+
+      - name: CDK synth
+        run: npx cdk synth
+
+      - name: CDK deploy
         run: |
-          # Generate JSON data
-          echo '{"key1":"value1","key2":"value2"}' > output.json
+          export CDK_DEFAULT_ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
+          npx --yes cdk deploy --require-approval never
 
-          # Parse JSON and set each key as an output using $GITHUB_OUTPUT
-          key1=$(jq -r '.key1' output.json)
-          key2=$(jq -r '.key2' output.json)
+  # job1:
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     key1: ${{ steps.generate_json.outputs.key1 }}
+  #     key2: ${{ steps.generate_json.outputs.key2 }}
+  #   steps:
+  #     - name: Generate JSON output
+  #       id: generate_json
+  #       run: |
+  #         # Generate JSON data
+  #         echo '{"key1":"value1","key2":"value2"}' > output.json
 
-          echo "key1=$key1" >> "$GITHUB_OUTPUT"
-          echo "key2=$key2" >> "$GITHUB_OUTPUT"
+  #         # Parse JSON and set each key as an output using $GITHUB_OUTPUT
+  #         key1=$(jq -r '.key1' output.json)
+  #         key2=$(jq -r '.key2' output.json)
 
-  job2:
-    needs: job1
-    runs-on: ubuntu-latest
-    env:
-      KEY1: ${{ needs.job1.outputs.key1 }}
-      KEY2: ${{ needs.job1.outputs.key2 }}
-    steps:
-      - name: Use the JSON keys as separate environment variables
-        run: |
-          echo "KEY1 is $KEY1"
-          echo "KEY2 is $KEY2"
+  #         echo "key1=$key1" >> "$GITHUB_OUTPUT"
+  #         echo "key2=$key2" >> "$GITHUB_OUTPUT"
+
+  # job2:
+  #   needs: job1
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     KEY1: ${{ needs.job1.outputs.key1 }}
+  #     KEY2: ${{ needs.job1.outputs.key2 }}
+  #   steps:
+  #     - name: Use the JSON keys as separate environment variables
+  #       run: |
+  #         echo "KEY1 is $KEY1"
+  #         echo "KEY2 is $KEY2"
