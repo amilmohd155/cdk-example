@@ -1,4 +1,4 @@
-name: Use JSON Output as Separate Environment Variables
+name: Use JSON Output with $GITHUB_OUTPUT for Separate Environment Variables
 
 on:
   push:
@@ -10,19 +10,28 @@ jobs:
   job1:
     runs-on: ubuntu-latest
     outputs:
-      jsonOutput: ${{ steps.generate_json.outputs.jsonData }}
+      key1: ${{ steps.generate_json.outputs.key1 }}
+      key2: ${{ steps.generate_json.outputs.key2 }}
     steps:
       - name: Generate JSON output
         id: generate_json
         run: |
-          echo "::set-output name=jsonData::{\"key1\":\"value1\",\"key2\":\"value2\"}"
+          # Generate JSON data
+          echo '{"key1":"value1","key2":"value2"}' > output.json
+
+          # Parse JSON and set each key as an output using $GITHUB_OUTPUT
+          key1=$(jq -r '.key1' output.json)
+          key2=$(jq -r '.key2' output.json)
+
+          echo "key1=$key1" >> "$GITHUB_OUTPUT"
+          echo "key2=$key2" >> "$GITHUB_OUTPUT"
 
   job2:
     needs: job1
     runs-on: ubuntu-latest
     env:
-      KEY1: ${{ fromJson(needs.job1.outputs.jsonOutput).key1 }}
-      KEY2: ${{ fromJson(needs.job1.outputs.jsonOutput).key2 }}
+      KEY1: ${{ needs.job1.outputs.key1 }}
+      KEY2: ${{ needs.job1.outputs.key2 }}
     steps:
       - name: Use the JSON keys as separate environment variables
         run: |
