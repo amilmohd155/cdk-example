@@ -85,7 +85,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ needs.cdk.outputs.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ needs.cdk.outputs.AWS_SECRET_ACCESS_KEY }}
         run: |
-          node ./example.js
+          node ./example.ts
 
   # job1:
   #   runs-on: ubuntu-latest
