@@ -1,4 +1,4 @@
-name: Use JSON Output with $GITHUB_OUTPUT for Separate Environment Variables
+name: Deploy CDK Example
 
 on:
   push:
@@ -39,8 +39,8 @@ jobs:
       - name: AWS account - Debug
         run: aws sts get-caller-identity
 
-      - name: CDK synth
-        run: npx --yes cdk synth
+      # - name: CDK synth
+      #   run: npx --yes cdk synth
 
       - name: CDK deploy
         run: |
@@ -54,7 +54,7 @@ jobs:
         uses: aws-actions/aws-secretsmanager-get-secrets@v2
         with:
           secret-ids: znap-url-secret
-          # parse-json-secrets: true
+          parse-json-secrets: true
 
       - name: Print secrets
         run: |
